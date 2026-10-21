@@ -1,0 +1,48 @@
+#!/bin/sh
+# token-usage launcher: locate a Node.js >= 22.18 runtime and run the CLI.
+# herdr runs plugin commands with the server's environment, which may not
+# include version-manager shims, so probe common install locations as well.
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH= cd -- "$script_dir/.." && pwd)
+
+pick_node() {
+  if [ -n "${TU_NODE:-}" ] && [ -x "${TU_NODE}" ]; then
+    printf '%s\n' "$TU_NODE"
+    return 0
+  fi
+  if command -v node >/dev/null 2>&1; then
+    command -v node
+    return 0
+  fi
+  for candidate in \
+    "$HOME/.local/share/mise/shims/node" \
+    "$HOME/.local/share/mise/installs/node/latest/bin/node" \
+    "$HOME/.volta/bin/node" \
+    "$HOME/.asdf/shims/node" \
+    "$HOME/.local/share/fnm/aliases/default/bin/node" \
+    /opt/homebrew/bin/node \
+    /usr/local/bin/node \
+    /usr/bin/node; do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  if [ -d "$HOME/.nvm/versions/node" ]; then
+    latest=$(ls -1 "$HOME/.nvm/versions/node" 2>/dev/null | sort -V | tail -n 1)
+    if [ -n "$latest" ] && [ -x "$HOME/.nvm/versions/node/$latest/bin/node" ]; then
+      printf '%s\n' "$HOME/.nvm/versions/node/$latest/bin/node"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+if ! node_bin=$(pick_node); then
+  echo "token-usage: Node.js >= 22.18 not found (set TU_NODE=/path/to/node)" >&2
+  exit 127
+fi
+
+exec "$node_bin" --disable-warning=ExperimentalWarning "$root/src/cli.ts" "$@"

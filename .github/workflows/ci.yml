@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: ["22.x", "24.x", "26.x"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Launcher smoke test
+        run: sh bin/tu --help
+
+  manifest:
+    name: Manifest and versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+      - name: package.json and herdr-plugin.toml agree
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+            const toml = /^version\s*=\s*"([^"]+)"/m.exec(fs.readFileSync("herdr-plugin.toml", "utf8"))?.[1];
+            const manifest = JSON.parse(fs.readFileSync(".release-please-manifest.json", "utf8"))["."];
+            if (pkg !== toml || pkg !== manifest) {
+              console.error(`version mismatch: package.json ${pkg}, herdr-plugin.toml ${toml}, release-please ${manifest}`);
+              process.exit(1);
+            }
+            console.log(`version ${pkg}`);
+          '
+
+  docs:
+    name: Docs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci
+      - run: npm run docs:build

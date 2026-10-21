@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Token Usage logo">
+  <rect x="2" y="2" width="92" height="92" rx="22" fill="#1e1e2e" stroke="#45475a" stroke-width="2"/>
+  <path d="M20 24H76" stroke="#f38ba8" stroke-width="4" stroke-linecap="round"/>
+  <path d="M20 76L76 28" stroke="#6c7086" stroke-width="3" stroke-dasharray="3 6" stroke-linecap="round"/>
+  <path d="M20 76C31 75 36 68 43 63S56 53 63 45" stroke="#cba6f7" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <circle cx="63" cy="45" r="7.5" fill="#89dceb"/>
+</svg>

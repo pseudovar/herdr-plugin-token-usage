@@ -1,0 +1,5 @@
+* text=auto eol=lf
+bin/tu text eol=lf
+*.png binary
+# Rendered from demo data by `npm run docs:shots`; keep them out of language stats and diffs.
+docs/public/shots/** linguist-generated=true -diff
