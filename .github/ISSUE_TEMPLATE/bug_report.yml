@@ -1,0 +1,70 @@
+name: Bug report
+description: Something shows the wrong numbers, breaks, or doesn't work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please check [Troubleshooting](https://pseudovar.github.io/herdr-plugin-token-usage/guide/troubleshooting) first.
+        **Don't paste prompts, transcripts, tokens or anything private.** For security issues, use a [private report](https://github.com/pseudovar/herdr-plugin-token-usage/security/advisories/new).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start an OpenCode session in herdr
+        2. Press prefix+u
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where?
+      multiple: true
+      options:
+        - Agent sidebar rows
+        - Space sidebar rows
+        - Tab bar
+        - Dashboard
+        - Alerts / toasts
+        - tu setup / doctor / CLI
+        - Install or update
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness
+      multiple: true
+      options:
+        - Pi
+        - OpenCode
+        - GitHub Copilot CLI
+        - Claude Code
+        - Other / not harness-specific
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `tu doctor`
+      description: "`~/.local/state/herdr/plugins/pseudovar.token-usage/bin/tu doctor`. Remove anything you'd rather not share."
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin, herdr, Node.js, OS and terminal.
+      placeholder: "plugin 0.5.0 · herdr 0.9.4 · Node 24.11 · macOS 26 · Ghostty 1.3"
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant log lines
+      description: From `~/.local/state/herdr/plugins/pseudovar.token-usage/token-usage.log` or `herdr plugin log list --plugin pseudovar.token-usage`.
+      render: text

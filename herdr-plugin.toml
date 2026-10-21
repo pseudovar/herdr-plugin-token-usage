@@ -1,0 +1,77 @@
+id = "pseudovar.token-usage"
+name = "Token Usage"
+version = "0.5.0"
+min_herdr_version = "0.9.1"
+description = "Live token usage, GitHub Copilot credits, cost and performance for Pi, OpenCode, Copilot CLI and Claude Code: sidebar, tab bar, dashboard and alerts."
+platforms = ["macos", "linux"]
+
+# Re-publish sidebar tokens after a server restart (herdr does not persist them),
+# refresh the Copilot quota and rewrite the stable tab-bar shim.
+[[startup]]
+command = ["sh", "bin/tu", "startup"]
+
+# Event hooks are short-lived: ingest the affected pane's harness, update its
+# sidebar tokens and evaluate rules, then exit.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["sh", "bin/tu", "hook"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["sh", "bin/tu", "hook"]
+
+[[events]]
+on = "pane.exited"
+command = ["sh", "bin/tu", "hook"]
+
+[[events]]
+on = "pane.closed"
+command = ["sh", "bin/tu", "hook"]
+
+[[events]]
+on = "pane.moved"
+command = ["sh", "bin/tu", "hook"]
+
+[[panes]]
+id = "dashboard"
+title = "Token usage"
+placement = "popup"
+width = "92%"
+height = "88%"
+command = ["sh", "bin/tu", "dashboard"]
+
+[[panes]]
+id = "dashboard-split"
+title = "Token usage"
+placement = "split"
+command = ["sh", "bin/tu", "dashboard"]
+
+[[actions]]
+id = "open"
+title = "Token usage: open dashboard"
+command = ["sh", "bin/tu", "open", "popup"]
+
+[[actions]]
+id = "open-split"
+title = "Token usage: open dashboard beside this pane"
+command = ["sh", "bin/tu", "open", "split"]
+
+[[actions]]
+id = "open-tab"
+title = "Token usage: open dashboard in a new tab"
+command = ["sh", "bin/tu", "open", "tab"]
+
+[[actions]]
+id = "refresh"
+title = "Token usage: refresh now"
+command = ["sh", "bin/tu", "refresh"]
+
+[[actions]]
+id = "snooze"
+title = "Token usage: snooze alerts for 1 hour (toggle)"
+command = ["sh", "bin/tu", "snooze", "toggle"]
+
+[[actions]]
+id = "setup"
+title = "Token usage: show setup status"
+command = ["sh", "bin/tu", "setup"]

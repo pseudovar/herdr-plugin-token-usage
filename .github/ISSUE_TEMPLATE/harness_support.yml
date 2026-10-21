@@ -1,0 +1,42 @@
+name: Harness support or format change
+description: A harness isn't supported yet, or one that is changed how it records usage.
+labels: ["harness"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The plugin reads the usage records each harness writes locally. When a harness changes its format, numbers can go missing or wrong. This form helps us find out what changed.
+        **Only share usage fields** (tokens, model, timing, cost). Remove prompts, responses, paths and anything private from samples.
+  - type: input
+    id: harness
+    attributes:
+      label: Harness and version
+      placeholder: "Codex CLI 0.48 / OpenCode 2.1.3 / …"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's this about?
+      options:
+        - A harness that isn't supported yet
+        - A supported harness changed its format
+        - Billing or pricing is wrong for a harness or provider
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where the harness keeps its usage data
+      description: File paths or databases, and their format (JSONL, SQLite, …), if you know them.
+  - type: textarea
+    id: sample
+    attributes:
+      label: A redacted sample record
+      description: One usage record with only the usage fields kept.
+      render: json
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `tu doctor`
+      render: text

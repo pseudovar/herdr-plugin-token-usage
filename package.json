@@ -1,0 +1,44 @@
+{
+  "name": "herdr-plugin-token-usage",
+  "version": "0.5.0",
+  "description": "Live token usage, GitHub Copilot credits, cost and performance for every coding agent in herdr.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "Jason Ford (https://github.com/pseudovar)",
+  "homepage": "https://pseudovar.github.io/herdr-plugin-token-usage/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pseudovar/herdr-plugin-token-usage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pseudovar/herdr-plugin-token-usage/issues"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "test": "HERDR_PLUGIN_STATE_DIR=${TMPDIR:-/tmp}/tu-test-state HERDR_PLUGIN_CONFIG_DIR=${TMPDIR:-/tmp}/tu-test-config HERDR_SOCKET_PATH=/nonexistent/herdr.sock node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check": "npm run typecheck && npm test",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:shots": "node --disable-warning=ExperimentalWarning scripts/docs/render.ts"
+  },
+  "keywords": [
+    "herdr",
+    "herdr-plugin",
+    "tokens",
+    "usage",
+    "copilot",
+    "claude",
+    "opencode",
+    "pi"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitepress": "^1.6.4"
+  }
+}

@@ -1,0 +1,60 @@
+/* Catppuccin-flavoured brand colours, matching the plugin's terminal palette. */
+:root {
+  --vp-c-brand-1: #8839ef;
+  --vp-c-brand-2: #7287fd;
+  --vp-c-brand-3: #04a5e5;
+  --vp-c-brand-soft: rgba(136, 57, 239, 0.12);
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #8839ef 20%, #04a5e5);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, rgba(203, 166, 247, 0.35) 40%, rgba(137, 220, 235, 0.35) 60%);
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-bg: #1e1e2e;
+  --vp-c-bg-alt: #181825;
+  --vp-c-bg-elv: #181825;
+  --vp-c-bg-soft: #313244;
+  --vp-c-divider: #313244;
+  --vp-c-gutter: #11111b;
+  --vp-c-text-1: #cdd6f4;
+  --vp-c-text-2: #a6adc8;
+  --vp-c-text-3: #7f849c;
+  --vp-c-brand-1: #cba6f7;
+  --vp-c-brand-2: #b4befe;
+  --vp-c-brand-3: #89dceb;
+  --vp-c-brand-soft: rgba(203, 166, 247, 0.16);
+  --vp-code-bg: #181825;
+  --vp-home-hero-name-background: linear-gradient(120deg, #cba6f7 20%, #89dceb);
+}
+
+/* Terminal renders: keep their own colours, round the corners, lift them off the page. */
+.vp-doc img[src*="/shots/"],
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(17, 17, 27, 0.35);
+  margin: 20px 0;
+}
+
+.home-shot {
+  max-width: 1152px;
+  margin: 8px auto 0;
+  padding: 0 24px;
+}
+
+.home-shot img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(17, 17, 27, 0.5);
+}
+
+.home-shot figcaption {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}

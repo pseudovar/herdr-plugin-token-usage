@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a new view, chart, rule, surface or setting.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The question you want answered, or the problem you hit. "I want to know when…" is a great start.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you imagine it working, and where (sidebar, tab bar, dashboard, alerts, CLI).
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you've tried instead?
