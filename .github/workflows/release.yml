@@ -16,7 +16,7 @@ jobs:
       # Keeps a release PR open with the next version and changelog; merging it tags vX.Y.Z
       # and publishes a GitHub Release. With the default token, CI doesn't run on the release
       # PR itself; add a fine-grained token as RELEASE_PLEASE_TOKEN to change that.
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
