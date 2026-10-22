@@ -31,9 +31,11 @@ export function parseTables(lines: string[]): Table[] {
   return tables;
 }
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 function findKey(lines: string[], table: Table | undefined, key: string): number {
   if (!table) return -1;
-  const re = new RegExp(`^\\s*${key.replace(/\./g, "\\.")}\\s*=`);
+  const re = new RegExp(`^\\s*${escapeRegExp(key)}\\s*=`);
   for (let i = table.start + 1; i < table.end; i++) if (re.test(lines[i])) return i;
   return -1;
 }

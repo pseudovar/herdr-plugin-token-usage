@@ -95,7 +95,7 @@ export function blit(dst: Grid, src: Grid, row: number, col: number): void {
 }
 
 const n = (v: number) => String(Math.round(v * 100) / 100);
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Braille dot bits by [row][column]. */
 const BRAILLE = [
