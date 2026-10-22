@@ -39,6 +39,12 @@
   margin: 20px 0;
 }
 
+/* Close-ups keep their own size, up to the column width, so small ones aren't blown up. */
+.vp-doc img[src*="/shots/closeup-"] {
+  width: auto;
+  max-width: 100%;
+}
+
 .home-shot {
   max-width: 1152px;
   margin: 8px auto 0;

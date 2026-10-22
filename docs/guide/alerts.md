@@ -37,6 +37,8 @@ Rules decide two things: the **level** shown in front of every sidebar value
 - **Nothing is lost.** Every alert is also logged. The dashboard's Summary lists
   recent ones, and the Charts → Patterns tab has a timeline.
 
+![Recent alerts in the dashboard's Summary view](/shots/closeup-alerts.svg)
+
 ## Toast delivery
 
 herdr's toast delivery is `"off"` by default, which silences every alert.
@@ -63,6 +65,8 @@ tu snooze off
 ```
 
 ## Edit rules {#edit-rules}
+
+![The Rules view: each rule's level, condition, and when it last fired](/shots/closeup-rules.svg)
 
 The dashboard's Rules view is an editor. Select a rule with `↑` `↓`, then:
 

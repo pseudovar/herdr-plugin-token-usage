@@ -15,6 +15,8 @@ Each agent pane gets three rows under herdr's own agent row:
 | Spend and context | `$tu` | `▲ $13.72 ██▍░░░ 41%` |
 | Detail (dim) | `$tu_more` | `$1.85/5m · 68 t/s` |
 
+![Two agent rows in herdr's sidebar: a working Pi pane flagged ▲ by a burn-spike alert, and a finished OpenCode pane](/shots/closeup-sidebar.svg)
+
 `$13.72` is what the pane has spent **today**, across every session it has run.
 To show the current session's total instead, set `display.agentScope = "session"`.
 The gauge shows how full the context window is, to the nearest eighth of a cell.
@@ -45,7 +47,7 @@ draws the sidebar itself.
 
 ## The tab bar
 
-![The tab bar in each display style](/shots/tabbar-styles.svg)
+![The tab-bar summary: Copilot budget, pace, days left, today's spend and 5-minute burn](/shots/closeup-tabbar.svg)
 
 The right-hand side of herdr's tab bar shows your Copilot budget and today's
 total, refreshed every 5 seconds:
@@ -74,6 +76,8 @@ Copilot spends AI credits, and 1 credit is exactly $0.01, so `1,372cr` is
 | `visual` | `▲ $13.72 ██▍░░░ 41%` | `● $4.03 ▁▁▃▅█▂▃▁` | a budget bar with a month-elapsed marker |
 | `text` | `▲ $13.72 · ctx 41%` | `● $4.03 today` | percentages and token counts, no glyphs |
 | `spark` | `▲ $13.72 ▃▄█▃▂▅ 41%` (cost per call) | `● $4.03 ▁▁▃▅█▂▃▁` | a 7-day spend sparkline |
+
+![The tab bar in each display style](/shots/tabbar-styles.svg)
 
 Switch styles live from the dashboard: press `prefix+u`, then `5` for the Rules
 view, then `v`. Your real sidebar and tab bar change as you press. `m` switches
