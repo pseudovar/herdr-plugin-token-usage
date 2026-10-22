@@ -1,6 +1,6 @@
 id = "pseudovar.token-usage"
 name = "Token Usage"
-version = "0.5.0"
+version = "0.5.1"
 min_herdr_version = "0.9.1"
 description = "Live token usage, GitHub Copilot credits, cost and performance for Pi, OpenCode, Copilot CLI and Claude Code: sidebar, tab bar, dashboard and alerts."
 platforms = ["macos", "linux"]
