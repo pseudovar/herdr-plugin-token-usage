@@ -129,6 +129,73 @@ function stylesShot(model: Model, live: LiveAgent[], base: DisplayConfig): void 
   save("tabbar-styles.svg", windowSvg(grid(tabs, 92), { title: "herdr tab bar · the same four styles" }));
 }
 
+const SECTION_RULE = /^\s*─ [A-Z]/;
+
+interface CloseUp {
+  name: string;
+  title: string;
+  st: UiState;
+  /** The frame is rendered at this size, so the section keeps the layout it has at that width. */
+  cols: number;
+  rows: number;
+  /** The section's first line; the crop runs to the next blank line or section rule. */
+  from: RegExp;
+  px?: PixelState;
+  scale?: number;
+}
+
+/**
+ * One section of a view, trimmed to its content. A whole 160-column frame is
+ * too small to read at docs width; a single section isn't.
+ */
+function closeUpShot(ds: DataSource, model: Model, c: CloseUp): void {
+  const frame = renderFrame(ds, model, c.st, c.cols, c.rows, { px: c.px });
+  const g = grid(frame.lines, c.cols);
+  const plain = frame.lines.map((l) => l.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, ""));
+  const images = frame.images.map((box) => ({ box, row: box.line + 1, col: box.col - 1 + frame.margin }));
+  const start = plain.findIndex((l) => c.from.test(l));
+  if (start < 0) throw new Error(`${c.name}: no line matches ${c.from}`);
+  const blank = (r: number) => g[r].every((cell) => cell.ch === " " && !cell.bg) && !images.some((im) => r >= im.row && r < im.row + im.box.rows);
+  let end = start + 1;
+  // The frame's last line is the footer.
+  while (end < g.length - 1 && !blank(end) && !SECTION_RULE.test(plain[end])) end++;
+  const kept = images.filter((im) => im.row >= start && im.row < end);
+  let left = c.cols;
+  let right = 0;
+  for (const row of g.slice(start, end)) {
+    row.forEach((cell, x) => {
+      if (cell.ch === " " && !cell.bg) return;
+      left = Math.min(left, x);
+      right = Math.max(right, x + 1);
+    });
+  }
+  for (const im of kept) [left, right] = [Math.min(left, im.col), Math.max(right, im.col + im.box.cols)];
+  const overlays: ImageOverlay[] = kept.map((im) => ({
+    row: im.row - start,
+    col: im.col - left,
+    cols: im.box.cols,
+    rows: im.box.rows,
+    href: `data:image/png;base64,${im.box.png().toString("base64")}`,
+  }));
+  const crop = g.slice(start, end).map((row) => row.slice(left, right));
+  save(c.name, windowSvg(crop, { title: c.title, chrome: false, images: overlays, scale: c.scale }));
+}
+
+/** The first two agents' rows in herdr's sidebar, drawn larger. */
+function sidebarCloseUp(model: Model, live: LiveAgent[], display: DisplayConfig): void {
+  const lines = sidebarLines(model, live, display);
+  const at = lines.findIndex((l) => l.includes("AGENTS"));
+  const ends = lines.flatMap((l, i) => (i > at && l === "" ? [i] : []));
+  const g = grid(lines.slice(at, ends[1] ?? lines.length), 26, "#181825");
+  save("closeup-sidebar.svg", windowSvg(g, { title: "Agent rows in herdr's sidebar", chrome: false, bg: "#181825", scale: 1.5 }));
+}
+
+/** The tab-bar summary, drawn larger. */
+function tabBarCloseUp(model: Model, display: DisplayConfig): void {
+  const line = ` ${tabBar(model, display)} `;
+  save("closeup-tabbar.svg", windowSvg(grid([fg(C.text, line)], width(line), "#11111b"), { title: "The tab-bar summary", chrome: false, bg: "#11111b", scale: 1.3 }));
+}
+
 /** herdr itself: tab bar, the sidebar with this plugin's rows, an agent pane, and the dashboard popup on top. */
 function heroShot(ds: DataSource, model: Model, live: LiveAgent[], display: DisplayConfig): string {
   const SIDE = 26;
@@ -239,6 +306,26 @@ async function main(): Promise<void> {
       const px: PixelState = { mode: tab === "spend" ? "on" : "off", cell };
       dashboardShot(ds, today, ui({ view: 6, chartTab: tab }), `charts-${tab}.svg`, `Token usage · 6 Charts · ${tab[0].toUpperCase()}${tab.slice(1)}`, 60, 160, px);
     }
+
+    // Close-ups: one feature each, legible at docs width.
+    const px: PixelState = { mode: "on", cell };
+    const closeUps: CloseUp[] = [
+      { name: "closeup-budget.svg", title: "Copilot budget and today's spend", st: ui({ view: 1 }), cols: 100, rows: 70, from: /^Copilot budget/ },
+      { name: "closeup-live-agents.svg", title: "Live agents", st: ui({ view: 1 }), cols: 100, rows: 70, from: /─ LIVE AGENTS/ },
+      { name: "closeup-alerts.svg", title: "Recent alerts", st: ui({ view: 1 }), cols: 100, rows: 70, from: /─ RECENT ALERTS/ },
+      { name: "closeup-burnup.svg", title: "Copilot burn-up", st: ui({ view: 1 }), cols: 100, rows: 70, from: /─ COPILOT BURN-UP/ },
+      { name: "closeup-anatomy.svg", title: "What you pay for: cost anatomy", st: ui({ view: 1 }), cols: 88, rows: 70, from: /─ WHAT YOU PAY FOR/ },
+      { name: "closeup-advisor.svg", title: "Compaction advisor", st: ui({ view: 6, chartTab: "live" }), cols: 120, rows: 60, from: /─ COMPACTION ADVISOR/ },
+      { name: "closeup-context.svg", title: "Context growth", st: ui({ view: 6, chartTab: "live" }), cols: 88, rows: 60, from: /─ CONTEXT GROWTH/ },
+      { name: "closeup-pixel-burnup.svg", title: "Pixel burn-up chart", st: ui({ view: 6, chartTab: "spend" }), cols: 100, rows: 60, from: /─ COPILOT BURN-UP/, px },
+      { name: "closeup-treemap.svg", title: "Where the money goes", st: ui({ view: 6, chartTab: "spend" }), cols: 100, rows: 60, from: /─ WHERE IT GOES/, px },
+      { name: "closeup-whatif.svg", title: "Model what-if", st: ui({ view: 6, chartTab: "models" }), cols: 88, rows: 60, from: /─ MODEL WHAT-IF/ },
+      { name: "closeup-calendar.svg", title: "Spend calendar", st: ui({ view: 6, chartTab: "patterns" }), cols: 62, rows: 60, from: /─ CALENDAR/, scale: 1.4 },
+      { name: "closeup-rules.svg", title: "Alert rules", st: ui({ view: 5, selected: 8 }), cols: 120, rows: 30, from: /─ RULES/ },
+    ];
+    for (const c of closeUps) closeUpShot(ds, today, c);
+    sidebarCloseUp(today, demo.live, display);
+    tabBarCloseUp(today, display);
 
     const socialPath = join(SANDBOX, "social.svg");
     writeFileSync(socialPath, socialSvg(hero));

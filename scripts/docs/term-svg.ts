@@ -105,6 +105,9 @@ const BRAILLE = [
   [0x40, 0x80],
 ];
 
+/** Block elements that fill a cell's whole width, so a run of them can be drawn as one rect. */
+const MERGEABLE = new Set([..."█▀▔▁▂▃▄▅▆▇░▒▓"]);
+
 /** Box-drawing glyphs as [left, right, up, down] arm weights (1 light, 2 heavy). */
 const BOX: Record<number, [number, number, number, number]> = {
   0x2500: [1, 1, 0, 0], 0x2501: [2, 2, 0, 0], 0x2502: [0, 0, 1, 1], 0x2503: [0, 0, 2, 2],
@@ -119,22 +122,23 @@ const DASH: Record<number, [boolean, number, boolean]> = {
 };
 
 /** The cell as vector shapes, or null when it is ordinary text. */
-function shape(cell: Cell, x: number, y: number): string | null {
+function shape(cell: Cell, x: number, y: number, span = 1): string | null {
   const cp = cell.ch.codePointAt(0) ?? 32;
   const W = CELL_W;
   const H = CELL_H;
   const paint = `fill="${cell.fg}"${cell.dim ? ` fill-opacity="${DIM}"` : ""}`;
   const rect = (rx: number, ry: number, rw: number, rh: number, opacity = 1) =>
-    `<rect x="${n(x + rx)}" y="${n(y + ry)}" width="${n(rw)}" height="${n(rh)}" ${paint}${opacity < 1 ? ` opacity="${opacity}"` : ""}/>`;
-  // Block elements.
-  if (cp === 0x2588) return rect(0, 0, W, H);
-  if (cp >= 0x2581 && cp <= 0x2587) return rect(0, H - (H * (cp - 0x2580)) / 8, W, (H * (cp - 0x2580)) / 8);
-  if (cp === 0x2580) return rect(0, 0, W, H / 2);
-  if (cp === 0x2594) return rect(0, 0, W, H / 8);
+    `<rect x="${n(x + rx)}" y="${n(y + ry)}" width="${n(rw)}" height="${n(rh)}" ${paint}${opacity < 1 ? ` opacity="${opacity}"` : ""} shape-rendering="crispEdges"/>`;
+  // Block elements. A run of identical full-width ones is a single rect `span` cells wide, so bars have no seams.
+  const RW = W * span;
+  if (cp === 0x2588) return rect(0, 0, RW, H);
+  if (cp >= 0x2581 && cp <= 0x2587) return rect(0, H - (H * (cp - 0x2580)) / 8, RW, (H * (cp - 0x2580)) / 8);
+  if (cp === 0x2580) return rect(0, 0, RW, H / 2);
+  if (cp === 0x2594) return rect(0, 0, RW, H / 8);
   if (cp >= 0x2589 && cp <= 0x258f) return rect(0, 0, (W * (0x2590 - cp)) / 8, H);
   if (cp === 0x2590) return rect(W / 2, 0, W / 2, H);
   if (cp === 0x2595) return rect((W * 7) / 8, 0, W / 8, H);
-  if (cp >= 0x2591 && cp <= 0x2593) return rect(0, 0, W, H, [0.22, 0.45, 0.7][cp - 0x2591]);
+  if (cp >= 0x2591 && cp <= 0x2593) return rect(0, 0, RW, H, [0.22, 0.45, 0.7][cp - 0x2591]);
   // Braille: square dots on a 2 × 4 grid, about as heavy as terminals draw them.
   if (cp >= 0x2801 && cp <= 0x28ff) {
     const bits = cp - 0x2800;
@@ -194,7 +198,7 @@ export function drawGrid(g: Grid, x0: number, y0: number): string {
       const bg = row[c].bg;
       let e = c + 1;
       while (e < row.length && row[e].bg === bg) e++;
-      if (bg) out.push(`<rect x="${n(x0 + c * CELL_W)}" y="${n(y)}" width="${n((e - c) * CELL_W)}" height="${CELL_H}" fill="${bg}"/>`);
+      if (bg) out.push(`<rect x="${n(x0 + c * CELL_W)}" y="${n(y)}" width="${n((e - c) * CELL_W)}" height="${CELL_H}" fill="${bg}" shape-rendering="crispEdges"/>`);
       c = e;
     }
     for (let c = 0; c < row.length; ) {
@@ -203,10 +207,14 @@ export function drawGrid(g: Grid, x0: number, y0: number): string {
         c++;
         continue;
       }
-      const s = shape(cell, x0 + c * CELL_W, y);
+      let span = 1;
+      if (MERGEABLE.has(cell.ch)) {
+        while (c + span < row.length && row[c + span].ch === cell.ch && row[c + span].fg === cell.fg && row[c + span].dim === cell.dim) span++;
+      }
+      const s = shape(cell, x0 + c * CELL_W, y, span);
       if (s !== null) {
         out.push(s);
-        c++;
+        c += span;
         continue;
       }
       // A run of text in one style. A single space never breaks a run, but wider
@@ -250,6 +258,8 @@ export interface WindowOptions {
   /** Window chrome (title bar with traffic lights); off for bare panels. */
   chrome?: boolean;
   padding?: number;
+  /** Display size relative to the drawing (the viewBox is unchanged, so it stays sharp). */
+  scale?: number;
 }
 
 /** A terminal window around a grid. */
@@ -260,6 +270,7 @@ export function windowSvg(g: Grid, o: WindowOptions): string {
   const w = cols * CELL_W + pad * 2;
   const h = g.length * CELL_H + pad * 2 + bar;
   const bg = o.bg ?? C.base;
+  const s = o.scale ?? 1;
   const chrome =
     o.chrome === false
       ? ""
@@ -270,7 +281,7 @@ export function windowSvg(g: Grid, o: WindowOptions): string {
     .map((im) => `<image x="${n(pad + im.col * CELL_W)}" y="${n(bar + pad + im.row * CELL_H)}" width="${n(im.cols * CELL_W)}" height="${n(im.rows * CELL_H)}" preserveAspectRatio="none" href="${im.href}"/>`)
     .join("");
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.title)}">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${n(w * s)}" height="${n(h * s)}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.title)}">` +
     `<rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" rx="10" fill="${bg}" stroke="#45475a"/>` +
     chrome +
     `<g font-family="${FONT}" font-size="${FONT_SIZE}" xml:space="preserve" style="white-space:pre">${drawGrid(g, pad, bar + pad)}</g>` +

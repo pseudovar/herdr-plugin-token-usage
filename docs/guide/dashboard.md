@@ -27,28 +27,55 @@ columns.
 
 ![The Summary view](/shots/dashboard-summary.svg)
 
-- **Copilot budget:** credits used against your monthly allowance, with a marker
-  (`┃`) for how much of the month has passed. **Pace** is used ÷ elapsed:
-  1.0× is exactly on budget. The projection is where the month will end at the
-  current pace. *This machine* is the share of the account's spend you can see
-  locally; the rest comes from VS Code, github.com or other machines.
-- **Today:** spend (split into Copilot and other), work tokens, calls and cache hit rate.
-- **Live agents:** every agent pane herdr knows about, with its spend, work
-  tokens, context, speed, 5-minute burn and state. `~` before a session name
-  means it was matched by heuristics: see [Set up herdr](/guide/setup#install-the-agent-integrations).
-- **Recent alerts:** the latest alerts, and how many rules are active right now.
-- **Copilot burn-up:**
-  - spend across the billing month for the whole account (blue) and this machine (mauve);
-  - the on-budget pace (grey);
-  - a projection to the reset (cyan, dashed);
-  - the budget line (red);
-  - a strip of the alerts that fired.
-- **What you pay for:** spend split into input, cache writes, cache reads and
-  output, for today, the last 30 days and the busiest live session. Long sessions
-  are mostly *cache reads*: every call re-reads the whole context, which
-  `/compact` shrinks.
-- **By harness**, **Activity** (work tokens per 5 minutes, with an hour axis) and
-  **Top models**, when there's room.
+### Copilot budget and today
+
+![The Copilot budget gauge and today's totals](/shots/closeup-budget.svg)
+
+Credits used against your monthly allowance, with a marker (`┃`) for how much of
+the month has passed. **Pace** is used ÷ elapsed: 1.0× is exactly on budget. The
+projection is where the month will end at the current pace. *This machine* is
+the share of the account's spend you can see locally; the rest comes from VS
+Code, github.com or other machines. **Today** is spend (split into Copilot and
+other), work tokens, calls and cache hit rate.
+
+### Live agents
+
+![The live agents table](/shots/closeup-live-agents.svg)
+
+Every agent pane herdr knows about, with its spend, work tokens, context, speed,
+5-minute burn and state. `~` before a session name means it was matched by
+heuristics: see [Set up herdr](/guide/setup#install-the-agent-integrations).
+
+### Recent alerts
+
+![Recent alerts](/shots/closeup-alerts.svg)
+
+The latest alerts, and how many rules are active right now.
+
+### Copilot burn-up
+
+![The Copilot burn-up in braille](/shots/closeup-burnup.svg)
+
+- Spend across the billing month for the whole account (blue) and this machine (mauve).
+- The on-budget pace (grey).
+- A projection to the reset (cyan, dashed).
+- The budget line (red).
+- A strip of the alerts that fired.
+
+Terminals with Kitty graphics can show it as a [pixel image](/guide/charts#pixel-burn-up) too.
+
+### What you pay for
+
+![Cost anatomy: spend split into cache reads, cache writes, output and input](/shots/closeup-anatomy.svg)
+
+Spend split into input, cache writes, cache reads and output, for today, the last
+30 days and the busiest live session. Long sessions are mostly *cache reads*:
+every call re-reads the whole context, which `/compact` shrinks.
+
+### And when there's room
+
+**By harness**, **Activity** (work tokens per 5 minutes, with an hour axis) and
+**Top models**.
 
 ## 2 Agents
 
