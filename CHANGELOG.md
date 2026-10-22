@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/pseudovar/herdr-plugin-token-usage/compare/v0.5.0...v0.5.1) (2026-10-22)
+
+
+### Bug fixes
+
+* re-bind a pane to its own session after a side run in its folder ([#7](https://github.com/pseudovar/herdr-plugin-token-usage/issues/7)) ([fbaac89](https://github.com/pseudovar/herdr-plugin-token-usage/commit/fbaac89ba0cface85593f22b212e3e30747f0d62))
+
+
+### Documentation
+
+* feature close-ups on the docs site ([#2](https://github.com/pseudovar/herdr-plugin-token-usage/issues/2)) ([769eb0e](https://github.com/pseudovar/herdr-plugin-token-usage/commit/769eb0e79ff366d080869748b5151dc39f8b2cc9))
+
 ## 0.5.0 (2026-10-21)
 
 First public release, on GitHub at `pseudovar/herdr-plugin-token-usage`.

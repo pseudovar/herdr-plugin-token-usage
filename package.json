@@ -1,6 +1,6 @@
 {
   "name": "herdr-plugin-token-usage",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Live token usage, GitHub Copilot credits, cost and performance for every coding agent in herdr.",
   "type": "module",
   "private": true,
