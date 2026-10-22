@@ -44,7 +44,8 @@ gh api -X PATCH "repos/$REPO" \
 gh api -X PUT "repos/$REPO/actions/permissions/workflow" -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true >/dev/null
 
 topics='"herdr","ai-agents","coding-agents","token-usage","github-copilot","claude-code","opencode","terminal","tui","typescript"'
-if [ "${1:-}" = "--list" ]; then topics="\"herdr-plugin\",$topics"; fi
+# --list adds the marketplace topic; once it's there, re-runs keep it (remove it in the web UI to unlist).
+if [ "${1:-}" = "--list" ] || gh api "repos/$REPO/topics" --jq '.names[]' | grep -qx herdr-plugin; then topics="\"herdr-plugin\",$topics"; fi
 echo "{\"names\":[$topics]}" | gh api -X PUT "repos/$REPO/topics" --input - >/dev/null
 
 # GitHub Pages, built and deployed by .github/workflows/docs.yml.
@@ -52,6 +53,10 @@ gh api -X POST "repos/$REPO/pages" -f build_type=workflow >/dev/null 2>&1 || gh 
 gh api -X PUT "repos/$REPO/private-vulnerability-reporting" >/dev/null
 gh api -X PUT "repos/$REPO/vulnerability-alerts" >/dev/null
 gh api -X PUT "repos/$REPO/automated-security-fixes" >/dev/null
+# CodeQL code scanning with GitHub's default setup.
+if [ "$(gh api "repos/$REPO/code-scanning/default-setup" --jq .state 2>/dev/null || true)" != "configured" ]; then
+  gh api -X PATCH "repos/$REPO/code-scanning/default-setup" -f state=configured >/dev/null 2>&1 || echo "  (CodeQL not enabled: turn on its default setup under Settings → Code security)"
+fi
 
 # Protect main: changes arrive through pull requests that pass CI and the PR-title check.
 if ! gh api "repos/$REPO/rulesets" --jq '.[].name' | grep -qx "main"; then
@@ -90,12 +95,12 @@ if ! gh release view "v$version" >/dev/null 2>&1; then
   gh release create "v$version" --title "v$version" --notes-file /tmp/tu-release-notes.md --verify-tag
 fi
 
-cat <<EOF
-
-Done: https://github.com/$REPO
-Docs: $SITE (live once the Docs workflow finishes)
-
-Two settings need the web UI:
-  - Social preview: Settings → General → Social preview → upload docs/public/shots/social-preview.png
-  - Optional: Settings → Code security → CodeQL analysis → "Default" setup
-EOF
+printf '\nDone: https://github.com/%s\nDocs: %s\n' "$REPO" "$SITE"
+if [ "${1:-}" = "--list" ]; then
+  echo "Marketplace: tagged herdr-plugin; herdr's index lists it on its next refresh (https://herdr.dev/plugins/)."
+fi
+# The social preview has no API: remind until one is uploaded.
+custom=$(gh api graphql -f query='query($o: String!, $n: String!) { repository(owner: $o, name: $n) { usesCustomOpenGraphImage } }' -f o="$OWNER" -f n="$NAME" --jq .data.repository.usesCustomOpenGraphImage 2>/dev/null || true)
+if [ "$custom" != "true" ]; then
+  echo "In the web UI: Settings → General → Social preview → upload docs/public/shots/social-preview.png"
+fi
