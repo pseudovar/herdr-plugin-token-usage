@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { resolveSession, titleHint } from "../src/core/binding.ts";
+import { resolveSession, saveBinding, titleHint } from "../src/core/binding.ts";
 import { DEFAULT_DISPLAY, DETAIL_MAX, agentTokens, detailLine, money, spaceTokens, tabBarText, textBar, textGauge, textSpark } from "../src/core/display.ts";
 import type { AgentView, DisplayConfig, SpaceView } from "../src/core/display.ts";
 import { Ledger } from "../src/core/ledger.ts";
@@ -253,5 +253,36 @@ describe("pane → session binding", () => {
     const ledger = ledgerWithSessions();
     const prev = { terminalId: "term_1", paneId: "w1:p1", workspaceId: "w1", agent: "opencode", harness: "opencode" as const, sessionId: null, method: null, boundAt: 9_000_000, agentSeenAt: 9_000_000, lastStatus: null, statusAt: null };
     assert.equal(resolveSession(ledger, agent(), "opencode", prev, new Set()), null);
+  });
+
+  describe("after two sessions start in the pane's folder", () => {
+    // The pane ran "earlier", then two sessions started in its folder at once and it was bound to one.
+    function laterStart(earlierLast: number) {
+      const ledger = new Ledger(":memory:");
+      const add = (id: string, first: number, last: number) =>
+        ledger.upsertSession({ harness: "pi", id, rootId: id, parentId: null, cwd: "/work/a", title: null, path: null, firstTs: first, lastTs: last });
+      add("earlier", 1_000, earlierLast);
+      add("later-1", 20_000, 27_000);
+      add("later-2", 20_000, 26_000);
+      const bind = (sessionId: string, from: number, to: number) => {
+        const b = { terminalId: "term_1", paneId: "w1:p1", workspaceId: "w1", agent: "pi", harness: "pi" as const, sessionId, method: "heuristic" as const, boundAt: from, agentSeenAt: null, lastStatus: null, statusAt: null };
+        saveBinding(ledger, b, from);
+        saveBinding(ledger, b, to);
+        return b;
+      };
+      bind("earlier", 1_000, 19_000);
+      return { ledger, prev: bind("later-1", 20_100, 49_000) };
+    }
+    const pi = () => agent({ agent: "pi", cwd: "/work/a", foreground_cwd: "/work/a", terminal_title_stripped: "π - a" });
+
+    it("goes back to the earlier session once it writes again (they were side runs)", () => {
+      const { ledger, prev } = laterStart(50_000);
+      assert.equal(resolveSession(ledger, pi(), "pi", prev, new Set())?.sessionId, "earlier");
+    });
+
+    it("stays on the new session when the earlier one stopped (a real /new)", () => {
+      const { ledger, prev } = laterStart(19_000);
+      assert.equal(resolveSession(ledger, pi(), "pi", prev, new Set())?.sessionId, "later-1");
+    });
   });
 });

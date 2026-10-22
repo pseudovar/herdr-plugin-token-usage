@@ -197,6 +197,18 @@ export function resolveSession(
   }
   const hint = titleHint(agent);
   const prevSession = prev?.sessionId ? live.find((c) => c.id === prev.sessionId) : undefined;
+  // The session this pane was bound to before the current one. If it has written since the
+  // current one started, the current one was a side run in the same directory (a subagent or a
+  // parallel job the agent started), or the old session was resumed: the pane is on it again.
+  const former = prevSession
+    ? ledger.get<{ session_id: string }>(
+        `SELECT session_id FROM binding_history WHERE terminal_id = ? AND harness = ? AND session_id <> ?
+         ORDER BY last_seen DESC LIMIT 1`,
+        agent.terminal_id,
+        harness,
+        prevSession.id,
+      )?.session_id
+    : undefined;
   let best: Candidate | null = null;
   let bestScore = -Infinity;
   live.forEach((c, rank) => {
@@ -208,6 +220,7 @@ export function resolveSession(
     }
     if (prevSession && c.id === prevSession.id) score += 10;
     if (prevSession && c.id !== prevSession.id && (c.first_ts ?? 0) > (prevSession.last_ts ?? 0)) score += 15;
+    if (prevSession && c.id === former && (c.last_ts ?? 0) > (prevSession.first_ts ?? 0)) score += 25;
     if (score > bestScore) {
       best = c;
       bestScore = score;
