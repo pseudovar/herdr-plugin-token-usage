@@ -1,5 +1,6 @@
 #!/bin/sh
-# One-time GitHub setup for pseudovar/herdr-plugin-token-usage.
+# GitHub setup for pseudovar/herdr-plugin-token-usage. Safe to re-run: the first
+# run creates and pushes the repo, later runs only re-apply the settings.
 #
 #   scripts/setup-github.sh            create the repo, push, and apply the settings below
 #   scripts/setup-github.sh --list     also add the `herdr-plugin` topic (lists it in herdr's marketplace)
@@ -25,8 +26,11 @@ fi
 if ! git remote get-url origin >/dev/null 2>&1; then
   git remote add origin "https://github.com/$REPO.git"
 fi
-# Push with the pseudovar token, without storing it in git's config.
-git -c credential.helper= -c "credential.helper=!f() { echo username=$OWNER; echo password=$GH_TOKEN; }; f" push -u origin main --tags
+# First run only: push with the pseudovar token, kept out of git's config and the
+# process list. Later runs leave the branch alone (it moves on through pull requests).
+if ! git ls-remote --exit-code origin refs/heads/main >/dev/null 2>&1; then
+  git -c credential.helper= -c 'credential.helper=!f() { echo username='"$OWNER"'; echo "password=$GH_TOKEN"; }; f' push -u origin main --tags
+fi
 
 echo "Applying repository settings…"
 gh api -X PATCH "repos/$REPO" \
@@ -35,6 +39,9 @@ gh api -X PATCH "repos/$REPO" \
   -F allow_squash_merge=true -F allow_merge_commit=false -F allow_rebase_merge=false \
   -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY \
   -F delete_branch_on_merge=true -F allow_auto_merge=true -F allow_update_branch=true >/dev/null
+
+# release-please opens its release pull requests with the workflow token.
+gh api -X PUT "repos/$REPO/actions/permissions/workflow" -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true >/dev/null
 
 topics='"herdr","ai-agents","coding-agents","token-usage","github-copilot","claude-code","opencode","terminal","tui","typescript"'
 if [ "${1:-}" = "--list" ]; then topics="\"herdr-plugin\",$topics"; fi
