@@ -1,4 +1,4 @@
-import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from "node:fs";
+import { closeSync, openSync, readFileSync, statSync, unlinkSync, writeSync } from "node:fs";
 import { sleepSync } from "./time.ts";
 
 /**
@@ -71,9 +71,10 @@ export class FileLock {
   private isStale(): boolean {
     try {
       const [pidText, tsText] = readFileSync(this.path, "utf8").split(" ");
-      const ts = Number(tsText);
+      // A holder killed between creating the file and writing to it leaves it empty: go by the file's age.
+      const ts = Number(tsText) || statSync(this.path).mtimeMs;
       const pid = Number(pidText);
-      if (Number.isFinite(ts) && Date.now() - ts > this.staleMs) return true;
+      if (Date.now() - ts > this.staleMs) return true;
       if (Number.isFinite(pid) && pid > 0) {
         try {
           process.kill(pid, 0);
