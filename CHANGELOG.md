@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0](https://github.com/pseudovar/herdr-plugin-token-usage/compare/v0.5.0...v0.6.0) (2026-11-17)
+
+
+### Features
+
+* put back a wiped herdr config and report harnesses that can't be read ([#11](https://github.com/pseudovar/herdr-plugin-token-usage/issues/11)) ([7f2689b](https://github.com/pseudovar/herdr-plugin-token-usage/commit/7f2689bb0880c72fe7465a1dbd44519fb5cb4476))
+
+
+### Bug fixes
+
+* re-bind a pane to its own session after a side run in its folder ([#7](https://github.com/pseudovar/herdr-plugin-token-usage/issues/7)) ([fbaac89](https://github.com/pseudovar/herdr-plugin-token-usage/commit/fbaac89ba0cface85593f22b212e3e30747f0d62))
+* recover ingestion from an empty lock file ([#10](https://github.com/pseudovar/herdr-plugin-token-usage/issues/10)) ([0816a49](https://github.com/pseudovar/herdr-plugin-token-usage/commit/0816a491b42cd929a1992e87e502bfdd526a8929))
+
+
+### Documentation
+
+* feature close-ups on the docs site ([#2](https://github.com/pseudovar/herdr-plugin-token-usage/issues/2)) ([769eb0e](https://github.com/pseudovar/herdr-plugin-token-usage/commit/769eb0e79ff366d080869748b5151dc39f8b2cc9))
+
 ## 0.5.0 (2026-10-21)
 
 First public release, on GitHub at `pseudovar/herdr-plugin-token-usage`.
