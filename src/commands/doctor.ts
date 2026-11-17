@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ADAPTERS, INGEST_ORDER } from "../core/ingest.ts";
+import { ADAPTERS, INGEST_ORDER, ingestFailures } from "../core/ingest.ts";
 import { Ledger } from "../core/ledger.ts";
 import { sessionMetrics } from "../core/metrics.ts";
 import { getBinding } from "../core/binding.ts";
@@ -25,6 +25,7 @@ export async function run(_args: string[]): Promise<number> {
     out.push(`  ledger ${(dbSize / 1024 / 1024).toFixed(1)} MB`);
     out.push("");
     out.push("Data sources:");
+    const failures = ingestFailures(rt.ledger);
     for (const h of INGEST_ORDER) {
       const adapter = ADAPTERS[h];
       const enabled = rt.config.harnesses[h];
@@ -38,6 +39,8 @@ export async function run(_args: string[]): Promise<number> {
         `  ${found ? "✓" : "·"} ${HARNESS_LABEL[h].padEnd(12)} ${enabled ? "" : "(disabled) "}${row?.n ?? 0} calls, ` +
           `last call ${fmtAgo(row?.last ?? null)}, ingested ${ingested ? fmtAgo(ingested) : "never"}`,
       );
+      const failure = failures.find((f) => f.harness === h);
+      if (failure) out.push(`      ! can't be read (first failed ${fmtAgo(failure.since)}): ${failure.message}`);
     }
     const card = rt.ledger.getMeta("copilot_rate_card");
     out.push(`  Copilot credit rate card: ${card ? Object.keys(JSON.parse(card)).length + " models observed" : "none (prices from model catalogs)"}`);

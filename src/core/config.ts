@@ -83,6 +83,8 @@ export interface Config {
     sound: "none" | "done" | "request";
   };
   statusline: { refreshPanes: boolean; showTokens: boolean };
+  /** Put the plugin's herdr config entries back if a rewrite of config.toml removes all of them. */
+  setup: { autoRestore: boolean };
   /** How sidebar rows and the tab bar look (cycle live from the dashboard Lab view). */
   display: DisplayConfig;
   rules: Rule[];
@@ -238,6 +240,7 @@ export function defaultConfig(): Config {
     contextLimits: {},
     notify: { enabled: true, cooldownMinutes: 60, sound: "request" },
     statusline: { refreshPanes: true, showTokens: true },
+    setup: { autoRestore: true },
     display: { ...DEFAULT_DISPLAY },
     rules: structuredClone(DEFAULT_RULES),
   };
@@ -278,6 +281,7 @@ export function mergeConfig(base: Config, user: Partial<Config>): Config {
   if (user.contextLimits) out.contextLimits = { ...user.contextLimits };
   if (user.notify) out.notify = { ...out.notify, ...user.notify };
   if (user.statusline) out.statusline = { ...out.statusline, ...user.statusline };
+  if (user.setup) out.setup = { ...out.setup, ...user.setup };
   if (user.display) {
     const d = { ...out.display, ...user.display };
     if (!DISPLAY_STYLES.includes(d.style)) d.style = DEFAULT_DISPLAY.style;

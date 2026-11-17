@@ -300,7 +300,7 @@ function describe(rule: Rule, v: number, mark: number | null, ctx: EvalContext, 
 }
 
 /** Merge several firings into a single toast (herdr shows one per second). */
-export function coalesce(firings: Firing[]): { title: string; body: string } | null {
+export function coalesce(firings: Array<Pick<Firing, "title" | "body" | "notify">>): { title: string; body: string } | null {
   const toSend = firings.filter((f) => f.notify);
   if (toSend.length === 0) return null;
   if (toSend.length === 1) return { title: toSend[0].title, body: toSend[0].body };

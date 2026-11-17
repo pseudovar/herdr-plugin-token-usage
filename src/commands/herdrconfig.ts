@@ -1,6 +1,10 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import { PLUGIN_ID, herdrConfigPath } from "../env.ts";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import type { Ledger } from "../core/ledger.ts";
+import { PLUGIN_ID, herdrConfigPath, stateDir } from "../env.ts";
+import { call } from "../herdr/client.ts";
+import { FileLock } from "../util/lock.ts";
+import { log } from "../util/log.ts";
 import { statusShimPath } from "./shims.ts";
 
 export interface ConfigCheck {
@@ -303,4 +307,55 @@ export function simpleDiff(before: string, after: string): string {
     }
   }
   return out.join("\n");
+}
+
+/** The entries `tu setup --apply` adds for the plugin itself (toast delivery is herdr-wide). */
+const PLUGIN_ENTRIES: ReadonlyArray<ConfigCheck["id"]> = ["tabbar", "agents", "spaces", "keys"];
+
+/** Whether the config has all, some or none of the plugin's own entries. */
+export function pluginEntries(text: string): "all" | "some" | "none" {
+  const present = checkConfig(text).filter((c) => PLUGIN_ENTRIES.includes(c.id) && (c.state === "ok" || c.state === "outdated")).length;
+  return present === PLUGIN_ENTRIES.length ? "all" : present === 0 ? "none" : "some";
+}
+
+/**
+ * Put the plugin's entries back when something rewrote herdr's config and
+ * removed every one of them (a reset, or a tool that writes the whole file).
+ * Removing some of them by hand is left alone. Costs one stat while the file
+ * is unchanged. Returns a note for the next toast when it restored them.
+ */
+export async function restoreIfWiped(ledger: Ledger, enabled: boolean): Promise<{ title: string; body: string } | null> {
+  const path = herdrConfigPath();
+  const mtime = () => (existsSync(path) ? String(statSync(path).mtimeMs) : "none");
+  if (mtime() === ledger.getMeta("herdr_config_mtime")) return null;
+  mkdirSync(stateDir(), { recursive: true });
+  const lock = new FileLock(join(stateDir(), "herdr-config.lock"));
+  if (!lock.acquire(0)) return null;
+  try {
+    const text = readHerdrConfig();
+    let entries = pluginEntries(text);
+    let note: { title: string; body: string } | null = null;
+    if (enabled && entries === "none" && ledger.getMeta("herdr_config_entries") === "all") {
+      const { text: fixed, changes } = applyConfig(text);
+      if (changes.length) {
+        const backup = writeHerdrConfig(fixed);
+        entries = pluginEntries(fixed);
+        log.info(`herdr config lost the plugin's entries; restored: ${changes.join("; ")}${backup ? ` (backup ${backup})` : ""}`);
+        try {
+          await call("server.reload_config", {}, 5000);
+        } catch (err) {
+          log.warn(`restore: reload herdr config: ${(err as Error).message}`);
+        }
+        note = {
+          title: "Token usage: sidebar rows and tab bar restored",
+          body: `Something rewrote herdr's config.toml and removed them${backup ? `; that version is saved as ${basename(backup)}` : ""}.`,
+        };
+      }
+    }
+    ledger.setMeta("herdr_config_entries", entries);
+    ledger.setMeta("herdr_config_mtime", mtime());
+    return note;
+  } finally {
+    lock.release();
+  }
 }

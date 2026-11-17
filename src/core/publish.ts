@@ -28,6 +28,8 @@ export interface PublishContext {
   workspaceLabels: Map<string, string>;
   /** Collected toasts, sent once at the end (herdr allows one toast per second). */
   firings: Firing[];
+  /** The plugin's own notices (a restored herdr config, a harness it can't read), sent with the firings. */
+  notes?: Array<{ title: string; body: string }>;
   /** Compute everything but report nothing to herdr and persist no alert state. */
   dryRun?: boolean;
 }
@@ -365,7 +367,7 @@ export function evaluateGlobal(pc: PublishContext): Level {
 /** Send collected alerts as one toast (respecting snooze and the notify switch). */
 export async function flushNotifications(pc: PublishContext): Promise<void> {
   if (pc.dryRun || !pc.config.notify.enabled || isSnoozed(pc.ledger, pc.now)) return;
-  const toast = coalesce(pc.firings);
+  const toast = coalesce([...(pc.notes ?? []).map((n) => ({ ...n, notify: true })), ...pc.firings]);
   if (!toast) return;
   try {
     const reason = await notify(toast.title, toast.body, pc.config.notify.sound);
