@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import { applyConfig, checkConfig } from "../src/commands/herdrconfig.ts";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { after, before, describe, it } from "node:test";
+import { applyConfig, checkConfig, pluginEntries, restoreIfWiped } from "../src/commands/herdrconfig.ts";
+import { Ledger } from "../src/core/ledger.ts";
 
 describe("herdr config.toml editing", () => {
   it("adds every missing piece to a near-empty config", () => {
@@ -88,5 +92,63 @@ describe("herdr config.toml editing", () => {
     const custom = '[ui.sidebar.agents]\nrows = [["agent", "$tu"]]\n';
     assert.equal(checkConfig(custom).find((c) => c.id === "agents")?.state, "ok");
     assert.ok(!applyConfig(custom).changes.some((c) => c.includes("sidebar.agents")));
+  });
+});
+
+describe("restoring a wiped herdr config", () => {
+  const dir = mkdtempSync(join(tmpdir(), "tu-restore-"));
+  const path = join(dir, "config.toml");
+  const saved = process.env.HERDR_CONFIG_PATH;
+  before(() => {
+    process.env.HERDR_CONFIG_PATH = path;
+  });
+  after(() => {
+    if (saved === undefined) delete process.env.HERDR_CONFIG_PATH;
+    else process.env.HERDR_CONFIG_PATH = saved;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const mine = 'onboarding = false\n\n[theme]\nname = "catppuccin"\n';
+  const full = applyConfig(mine).text;
+  // Each write gets its own mtime: two writes in the same instant would look unchanged.
+  let tick = Date.now();
+  const write = (text: string) => {
+    writeFileSync(path, text);
+    tick += 2000;
+    utimesSync(path, new Date(tick), new Date(tick));
+  };
+
+  it("puts the plugin's entries back when a rewrite removed all of them", async () => {
+    const ledger = new Ledger(":memory:");
+    write(full);
+    assert.equal(await restoreIfWiped(ledger, true), null, "the first look only remembers what is there");
+    write(mine);
+    const note = await restoreIfWiped(ledger, true);
+    assert.match(note?.title ?? "", /restored/);
+    const text = readFileSync(path, "utf8");
+    assert.equal(pluginEntries(text), "all");
+    assert.match(text, /name = "catppuccin"/, "the rest of the config is kept");
+    assert.ok(readdirSync(dir).some((f) => f.startsWith("config.toml.bak-")), "the rewritten file is backed up");
+    assert.equal(await restoreIfWiped(ledger, true), null, "nothing more to do");
+  });
+
+  it("leaves a partial removal alone", async () => {
+    const ledger = new Ledger(":memory:");
+    write(full);
+    await restoreIfWiped(ledger, true);
+    const noTabBar = full.replace(/tab_bar_right = \[[\s\S]*?\n\]\n/, "");
+    assert.equal(pluginEntries(noTabBar), "some");
+    write(noTabBar);
+    assert.equal(await restoreIfWiped(ledger, true), null);
+    assert.equal(readFileSync(path, "utf8"), noTabBar);
+  });
+
+  it("does nothing when autoRestore is off", async () => {
+    const ledger = new Ledger(":memory:");
+    write(full);
+    await restoreIfWiped(ledger, true);
+    write(mine);
+    assert.equal(await restoreIfWiped(ledger, false), null);
+    assert.equal(readFileSync(path, "utf8"), mine);
   });
 });

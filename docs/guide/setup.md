@@ -117,6 +117,16 @@ tu doctor
 pane → session bindings, the Copilot quota, and the herdr config checks. Start
 here when something looks wrong; see [Troubleshooting](/guide/troubleshooting).
 
+## If herdr's config is rewritten
+
+Another tool, or a reset, can rewrite `config.toml` and drop everything
+`setup --apply` added. When every one of the plugin's entries disappears at
+once, the plugin puts them back the next time an agent changes state or herdr
+starts. It keeps the rewritten file as a backup, reloads herdr and tells you in
+a toast. If you remove only some of the entries yourself, they stay removed. To
+turn this off, set `"setup": { "autoRestore": false }` in
+[config.jsonc](/reference/configuration).
+
 ## Actions
 
 The plugin's actions are listed by

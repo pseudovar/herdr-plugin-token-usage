@@ -16,6 +16,7 @@ import { listAgents, listWorkspaces } from "../herdr/client.ts";
 import type { AgentInfo } from "../herdr/client.ts";
 import { parseJson } from "../util/fs.ts";
 import { log } from "../util/log.ts";
+import { selfCheck } from "./selfcheck.ts";
 
 interface EventData {
   pane_id?: string;
@@ -106,6 +107,7 @@ async function onAgentEvent(rt: Runtime, event: string, data: EventData): Promis
     agents,
   );
   evaluateGlobal(pc);
+  pc.notes = await selfCheck(rt);
   await flushNotifications(pc);
 }
 

@@ -2,6 +2,7 @@ import { ingest } from "../core/ingest.ts";
 import { loadQuota, publishAll } from "../core/publish.ts";
 import { openRuntime, publishContext } from "../core/runtime.ts";
 import { log } from "../util/log.ts";
+import { selfCheck } from "./selfcheck.ts";
 import { writeShims } from "./shims.ts";
 
 /**
@@ -21,6 +22,7 @@ export async function run(_args: string[]): Promise<number> {
     const summary = ingest(rt.ledger, rt.pricing, rt.config, { waitMs: 20_000 });
     const quota = loadQuota(rt.ledger, rt.config, true, 5000);
     const pc = publishContext(rt, quota);
+    pc.notes = await selfCheck(rt);
     const res = await publishAll(pc, { prune: true });
     log.info(
       `startup: ingest ${summary.ms} ms (${summary.results.map((r) => `${r.harness}+${r.records}`).join(" ")}), ` +

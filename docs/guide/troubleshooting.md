@@ -18,6 +18,9 @@ keeps each hook's output: `herdr plugin log list --plugin pseudovar.token-usage`
   re-publishes them, or run the **refresh now** action.
 - A pane only shows values once its agent has made a call that the plugin could
   match to a session. `tu doctor` lists the bindings.
+- If something rewrote `config.toml` and removed all of the plugin's rows, the
+  plugin puts them back the next time an agent changes state. `tu setup --apply`
+  does it straight away.
 
 ## No toasts
 
@@ -53,6 +56,14 @@ export TU_NODE=/path/to/node
 It needs a terminal with Kitty graphics (Ghostty, kitty or WezTerm) and herdr's
 `terminal.kitty_graphics`, which is on by default. Other terminals get a note
 instead of the chart. `k` on the Charts → Spend tab forces it on.
+
+## A harness stopped updating
+
+When a harness changes how it stores usage, the plugin can't read it any more.
+If reads keep failing for 5 minutes, you get a toast, *Token usage can't read
+OpenCode usage*, and `tu doctor` shows the error under that source until reads
+work again. [Open an issue](https://github.com/pseudovar/herdr-plugin-token-usage/issues/new/choose)
+with the output of `tu doctor`.
 
 ## Something else
 

@@ -22,6 +22,8 @@ export const ADAPTERS: Record<Harness, Adapter> = {
 
 export const INGEST_ORDER: Harness[] = ["copilot", "pi", "opencode", "claude"];
 
+const failedKey = (harness: Harness) => `ingest_failed:${harness}`;
+
 export interface IngestOptions {
   harnesses?: Harness[];
   scope?: Partial<Record<Harness, IngestScope>>;
@@ -64,14 +66,53 @@ export function ingest(ledger: Ledger, pricing: Pricing, config: Config, opts: I
         );
         results.push(res);
         if (!scope) ledger.setMeta(metaKey, String(Date.now()));
+        ledger.deleteMeta(failedKey(harness));
         if (harness === "copilot" && res.records > 0) pricing.reloadCopilotCard(ledger);
       } catch (err) {
         log.error(`ingest ${harness} failed`, err);
         results.push({ harness, records: 0, sessions: 0, files: 0, errors: 1, note: (err as Error).message });
+        recordIngestFailure(ledger, harness, (err as Error).message);
       }
     }
   } finally {
     lock.release();
   }
   return { ran: true, results, ms: Date.now() - started };
+}
+
+/** A harness has to keep failing this long before it's reported: one bad read can be a file caught mid-write. */
+export const FAILURE_GRACE_MS = 5 * 60_000;
+
+export interface IngestFailure {
+  harness: Harness;
+  /** The first failure since the last good read. */
+  since: number;
+  /** The latest error. */
+  message: string;
+  reported: boolean;
+}
+
+export function recordIngestFailure(ledger: Ledger, harness: Harness, message: string, now = Date.now()): void {
+  const prev = ingestFailures(ledger).find((f) => f.harness === harness);
+  ledger.setMeta(failedKey(harness), JSON.stringify({ since: prev?.since ?? now, message, reported: prev?.reported ?? false }));
+}
+
+/** Harnesses whose usage can't be read: every read since `since` has failed. */
+export function ingestFailures(ledger: Ledger): IngestFailure[] {
+  return INGEST_ORDER.flatMap((harness) => {
+    const raw = ledger.getMeta(failedKey(harness));
+    if (!raw) return [];
+    try {
+      return [{ harness, ...(JSON.parse(raw) as Omit<IngestFailure, "harness">) }];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** Failures past the grace period that haven't been reported; marks them reported, so each is toasted once. */
+export function takeUnreportedFailures(ledger: Ledger, now = Date.now()): IngestFailure[] {
+  const due = ingestFailures(ledger).filter((f) => !f.reported && now - f.since >= FAILURE_GRACE_MS);
+  for (const f of due) ledger.setMeta(failedKey(f.harness), JSON.stringify({ since: f.since, message: f.message, reported: true }));
+  return due;
 }

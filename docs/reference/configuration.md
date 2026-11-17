@@ -14,6 +14,7 @@ you change a rule, so comments other than its header aren't kept.
   "contextLimits": { "claude-opus-4-8": 200000 },
   "notify": { "enabled": true, "cooldownMinutes": 60, "sound": "request" },
   "statusline": { "refreshPanes": true },
+  "setup": { "autoRestore": true },
   "display": { "style": "rich", "money": "usd", "agentScope": "today" },
   "rules": [ /* see below */ ]
 }
@@ -30,6 +31,7 @@ you change a rule, so comments other than its header aren't kept.
 | `notify.cooldownMinutes` | `60` | Minimum time between toasts for the same rule and pane. |
 | `notify.sound` | `"request"` | Toast sound: `"none"`, `"done"` or `"request"`. |
 | `statusline.refreshPanes` | `true` | Let the 5-second tab-bar tick refresh panes that are mid-turn. (`showTokens` has no effect.) |
+| `setup.autoRestore` | `true` | If something rewrites herdr's `config.toml` and removes all of the plugin's entries, put them back, keeping a backup, and say so in a toast. Entries you remove yourself, short of all of them, stay removed. |
 | `display.style` | `"rich"` | Sidebar and tab-bar style: `rich`, `visual`, `text` or `spark`. |
 | `display.money` | `"usd"` | Show dollars, or `"credits"` for Copilot AI credits. |
 | `display.agentScope` | `"today"` | Agent rows show today's spend in the pane, or `"session"` for the session total. |
